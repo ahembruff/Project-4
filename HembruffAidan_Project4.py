@@ -76,14 +76,24 @@ def make_initialcond(xi,k0,sigma0):
     '''
     return (np.exp((-(xi**2))/(2*(sigma0**2))))*np.cos(k0*xi) # wavepacket function
 
-def sch_eqn(nspace,ntime,tau,method="ftcs",lenght=200,potential=[],wparam=[10,0,0.5]):
+def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,0.5]):
+    
+    h = length/(nspace-1)
     
     hbar = 1
+    mass = 0.5
     ftcs_coeff = 1j*tau/hbar 
     
     crank_coeff = 1j*tau/(2*hbar)
     
-    H = make_tridiagonal(nspace,1,-2,1)
+    H_coeff = -hbar**2/(2*mass*h)
+    H = H_coeff*make_tridiagonal(nspace,1,-2,1)
+    
+    # Periodic BCs from Textbook
+    H[0,-1] = H_coeff ; H[0,0] = -2*H_coeff ; H[0,1] = H_coeff
+    H[-1,2] = H_coeff ; H[-1,-1] = -2*H_coeff ; H[-1,0] = H_coeff
+     
+    
     return
 
 def sch_plot(plot_type="psi",save=True):
