@@ -79,6 +79,38 @@ def make_initialcond(xi,k0,sigma0):
     return (np.exp((-(xi**2))/(2*(sigma0**2))))*np.cos(k0*xi) # wavepacket function
 
 def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,0.5]):
+    """
+    
+
+    Parameters
+    ----------
+    nspace : TYPE
+        DESCRIPTION.
+    ntime : TYPE
+        DESCRIPTION.
+    tau : TYPE
+        DESCRIPTION.
+    method : TYPE, optional
+        DESCRIPTION. The default is "ftcs".
+    length : TYPE, optional
+        DESCRIPTION. The default is 200.
+    potential : TYPE, optional
+        DESCRIPTION. The default is [].
+    wparam : TYPE, optional
+        DESCRIPTION. The default is [10,0,0.5].
+
+    Returns
+    -------
+    psi : TYPE
+        DESCRIPTION.
+    x : TYPE
+        DESCRIPTION.
+    t : TYPE
+        DESCRIPTION.
+    probability : TYPE
+        DESCRIPTION.
+
+    """
     
     sigma0 , x0, k0 =  wparam[0], wparam[1], wparam[2] 
     h = length/(nspace-1)
@@ -150,9 +182,10 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         for istep in range(1, ntime):
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
+            # integrate over the grid length?
             #probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
     
-    return psi, x, t #probability
+    return psi, x, t, #probability
 
 sol = sch_eqn(80,200,1,"crank")
 x =  sol[1]
@@ -161,6 +194,23 @@ index = 0
 
 
 def sch_plot(plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
+    """
+    
+
+    Parameters
+    ----------
+    plot_type : TYPE, optional
+        DESCRIPTION. The default is "psi".
+    save : TYPE, optional
+        DESCRIPTION. The default is True.
+    filepath : TYPE, optional
+        DESCRIPTION. The default is "HembruffAidan_Project4_Fig1.png".
+
+    Returns
+    -------
+    None.
+
+    """
     
     fig = plt.figure()
         
@@ -183,4 +233,6 @@ def sch_plot(plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png
     
     return
 
-sch_plot()
+sch_plot(plot_type="prob",save=False)
+
+# END
