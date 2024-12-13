@@ -78,6 +78,7 @@ def make_initialcond(xi,k0,sigma0):
 
 def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,0.5]):
     
+    sigma0 , x0, k0 =  wparam[0], wparam[1], wparam[2] 
     h = length/(nspace-1)
     
     hbar = 1
@@ -97,6 +98,9 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     if method == "ftcs":
         # below from Lab 11
         psi = np.zeros((nspace,ntime)) # initialize the array for storing the complete spatial solution
+        
+        # initial condition using make_initialcond function developed in Lab 10
+        psi[:,0] = make_initialcond(x,35,0.2)
         
         A = np.identity(nspace) - ftcs_coeff*H
         
