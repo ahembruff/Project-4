@@ -87,11 +87,36 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     crank_coeff = 1j*tau/(2*hbar)
     
     H_coeff = -hbar**2/(2*mass*h)
+    
     H = H_coeff*make_tridiagonal(nspace,1,-2,1)
     
     # Periodic BCs from Textbook
     H[0,-1] = H_coeff ; H[0,0] = -2*H_coeff ; H[0,1] = H_coeff
     H[-1,2] = H_coeff ; H[-1,-1] = -2*H_coeff ; H[-1,0] = H_coeff
+    
+    if method == "ftcs":
+        # below from Lab 11
+        psi = np.zeros((nspace,ntime)) # initialize the array for storing the complete spatial solution
+        
+        A = np.identity(nspace) - ftcs_coeff*H
+        
+        # following 7 lines adapted from Lab 11
+        # iterate over the number of time steps to obtain spatial solutions for every time step
+        for istep in range(1, ntime):
+            psi[:,istep] = A.dot(psi[:,istep-1])
+        
+        # Solution stability is determined by maximum valued eigenvalue of A
+        # spectral_radius function is from Lab 10
+        stability = spectral_radius(A)
+        
+        # print statement for solution stability
+        if stability <= 1:
+            print("Solution is expected to be stable")
+        else:
+            print("Warning! Solution is expected to be unstable")
+            
+    if method == "crank":
+        
      
     
     return
