@@ -11,7 +11,7 @@ import numpy as np
 from numpy.linalg import eig
 from numpy.linalg import inv
 import cmath
-from matplotlib.pyplot import plt
+import matplotlib.pyplot as plt
 
 def spectral_radius(A):
     '''
@@ -111,7 +111,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         psi = np.zeros((nspace,ntime)) # initialize the array for storing the complete spatial solution
         
         # initial condition using make_initialcond function developed in Lab 10
-        psi[:+x0,0] = make_initialcond(x,k0,sigma0)
+        psi[:,0] = make_initialcond(x,k0,sigma0)
         
         ftcs_A = np.identity(nspace) - ftcs_coeff*H
         
@@ -120,7 +120,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         for istep in range(1, ntime):
             psi[:,istep] = ftcs_A.dot(psi[:,istep-1])
             
-            probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
+            #probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
             
         
         # Solution stability is determined by maximum valued eigenvalue of A
@@ -140,7 +140,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         psi = np.zeros((nspace,ntime))
         
         # initial condition using make_initialcond function developed in Lab 10
-        psi[:+x0,0] = make_initialcond(x,k0,sigma0)
+        psi[:,0] = make_initialcond(x,k0,sigma0)
         
         crank_A = inv(np.identity(nspace)+crank_coeff*H).dot(np.identity(nspace)-crank_coeff*H)
         
@@ -149,11 +149,17 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         for istep in range(1, ntime):
             psi[:,istep] = crank_A.dot(psi[:,istep-1])
             
-            probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
+            #probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
     
-    return psi, x, t, probability
+    return psi, x, t, #probability
 
-def sch_plot(x,t,index,psi,prob,plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
+sol = sch_eqn(80,200,1,"crank")[0]
+x =  sol[1]
+psi = sol[0]
+index = 50
+
+
+def sch_plot(plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
     
     fig = plt.figure()
         
@@ -165,7 +171,8 @@ def sch_plot(x,t,index,psi,prob,plot_type="psi",save=True,filepath="HembruffAida
         plt.show()
     
     if plot_type == "prob":
-        plt.plot(x, prob[t])
+        density = psi[:,index]*np.conjugate(psi[:,index])
+        plt.plot(x, density)
         plt.xlabel("x") ; plt.ylabel("P(x,t)")
         plt.title("Probability Density")
         plt.show()
@@ -174,3 +181,5 @@ def sch_plot(x,t,index,psi,prob,plot_type="psi",save=True,filepath="HembruffAida
         plt.savefig(filepath)
     
     return
+
+sch_plot()
