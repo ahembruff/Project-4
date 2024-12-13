@@ -54,9 +54,9 @@ def make_tridiagonal(N,b,d,a):
     '''
     # create the tridiagonal matrix by summing matrices with the specified values,
     # on the lower, main, and upper diagonals
-    return d*np.identity(N)+(b*np.eye(N,k=-1))+(a*np.eye(N,k=1)) 
+    return d*np.identity(N,dtype=complex)+(b*np.eye(N,k=-1,dtype=complex))+(a*np.eye(N,k=1,dtype=complex)) 
 
-def make_initialcond(xi,k0,sigma0):
+def make_initialcond(xi,k0,sigma0,x0):
     '''
     Author : Aidan Hembruff
     
@@ -76,7 +76,7 @@ def make_initialcond(xi,k0,sigma0):
     The wavepacket function determined by the parameters and spatial grid
 
     '''
-    return (np.exp((-(xi**2))/(2*(sigma0**2))))*np.cos(k0*xi) # wavepacket function
+    return (np.exp((-((xi-x0)**2))/(2*(sigma0**2))))*(np.exp(1j*k0*xi))/np.sqrt(sigma0*np.sqrt(np.pi)) # wavepacket function equation 9.42
 
 def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,0.5]):
     """
@@ -144,9 +144,9 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         psi = np.zeros((nspace,ntime),dtype=complex) # initialize the array for storing the complete spatial solution
         
         # initial condition using make_initialcond function developed in Lab 10
-        psi[:,0] = make_initialcond(x,k0,sigma0)
+        psi[:,0] = make_initialcond(x,k0,sigma0,x0)
         
-        ftcs_A = np.identity(nspace) - ftcs_coeff*H
+        ftcs_A = np.identity(nspace,dtype=complex) - ftcs_coeff*H
         
         # following 7 lines adapted from Lab 11
         # iterate over the number of time steps to obtain spatial solutions for every time step
@@ -173,9 +173,9 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         psi = np.zeros((nspace,ntime),dtype=complex)
         
         # initial condition using make_initialcond function developed in Lab 10
-        psi[:,0] = make_initialcond(x,k0,sigma0)
+        psi[:,0] = make_initialcond(x,k0,sigma0,x0)
         
-        crank_A = np.dot(inv(np.identity(nspace)+crank_coeff*H),(np.identity(nspace)-crank_coeff*H))
+        crank_A = np.dot(inv(np.identity(nspace,dtype=complex)+crank_coeff*H),(np.identity(nspace,dtype=complex)-crank_coeff*H))
         
         # following 7 lines adapted from Lab 11
         # iterate over the number of time steps to obtain spatial solutions for every time step
