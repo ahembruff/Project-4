@@ -11,6 +11,7 @@ import numpy as np
 from numpy.linalg import eig
 from numpy.linalg import inv
 import cmath
+from matplotlib.pyplot import plt
 
 def spectral_radius(A):
     '''
@@ -119,7 +120,8 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         for istep in range(1, ntime):
             psi[:,istep] = ftcs_A.dot(psi[:,istep-1])
             
-            probability[istep] = psi[:,istep]**2
+            probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
+            
         
         # Solution stability is determined by maximum valued eigenvalue of A
         # spectral_radius function is from Lab 10
@@ -147,10 +149,28 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         for istep in range(1, ntime):
             psi[:,istep] = crank_A.dot(psi[:,istep-1])
             
-            probability[istep] = psi[:,istep]**2
+            probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
     
-    return psi, x, t
+    return psi, x, t, probability
 
-def sch_plot(plot_type="psi",save=True):
+def sch_plot(x,t,index,psi,prob,plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
+    
+    fig = plt.figure()
+        
+    if plot_type == "psi":
+        # adapted from textbook
+        plt.plot(x, np.real(psi[:,index]))
+        plt.xlabel("x") ; plt.ylabel(r"$\psi(x)$")
+        plt.title("Real Wavefunction")
+        plt.show()
+    
+    if plot_type == "prob":
+        plt.plot(x, prob[t])
+        plt.xlabel("x") ; plt.ylabel("P(x,t)")
+        plt.title("Probability Density")
+        plt.show()
+        
+    if save == True:
+        plt.savefig(filepath)
     
     return
