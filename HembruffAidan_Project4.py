@@ -9,6 +9,7 @@ Created on Mon Nov 25 13:57:24 2024
 
 import numpy as np
 from numpy.linalg import eig
+from numpy.linalg import inv
 import cmath
 
 def spectral_radius(A):
@@ -95,23 +96,34 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     H[0,-1] = H_coeff ; H[0,0] = -2*H_coeff ; H[0,1] = H_coeff
     H[-1,2] = H_coeff ; H[-1,-1] = -2*H_coeff ; H[-1,0] = H_coeff
     
+    for i in potential:
+        H[i,i] += 1  
+    
+    x = np.linspace(-length/2,length/2,nspace)
+    t = tau*np.arange(0,ntime) # the time grid
+    
     if method == "ftcs":
+        
+        probability = np.zeros((ntime))
+        
         # below from Lab 11
         psi = np.zeros((nspace,ntime)) # initialize the array for storing the complete spatial solution
         
         # initial condition using make_initialcond function developed in Lab 10
-        psi[:,0] = make_initialcond(x,35,0.2)
+        psi[:+x0,0] = make_initialcond(x,k0,sigma0)
         
-        A = np.identity(nspace) - ftcs_coeff*H
+        ftcs_A = np.identity(nspace) - ftcs_coeff*H
         
         # following 7 lines adapted from Lab 11
         # iterate over the number of time steps to obtain spatial solutions for every time step
         for istep in range(1, ntime):
-            psi[:,istep] = A.dot(psi[:,istep-1])
+            psi[:,istep] = ftcs_A.dot(psi[:,istep-1])
+            
+            probability[istep] = psi[:,istep]**2
         
         # Solution stability is determined by maximum valued eigenvalue of A
         # spectral_radius function is from Lab 10
-        stability = spectral_radius(A)
+        stability = spectral_radius(ftcs_A)
         
         # print statement for solution stability
         if stability <= 1:
@@ -121,9 +133,23 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             
     if method == "crank":
         
-     
+        probability = np.zeros((ntime))
+        
+        psi = np.zeros((nspace,ntime))
+        
+        # initial condition using make_initialcond function developed in Lab 10
+        psi[:+x0,0] = make_initialcond(x,k0,sigma0)
+        
+        crank_A = inv(np.identity(nspace)+crank_coeff*H).dot(np.identity(nspace)-crank_coeff*H)
+        
+        # following 7 lines adapted from Lab 11
+        # iterate over the number of time steps to obtain spatial solutions for every time step
+        for istep in range(1, ntime):
+            psi[:,istep] = crank_A.dot(psi[:,istep-1])
+            
+            probability[istep] = psi[:,istep]**2
     
-    return
+    return psi, x, t
 
 def sch_plot(plot_type="psi",save=True):
     
