@@ -17,6 +17,8 @@ def spectral_radius(A):
     '''
     Author : Aidan Hembruff
     
+    **This function was originally developed in and is completely adapted from Lab 10
+    
     A function which finds the eigenvalue with the maximum
     absolute value for a 2-D array
 
@@ -34,6 +36,10 @@ def spectral_radius(A):
 
 def make_tridiagonal(N,b,d,a):
     '''
+    Author : Aidan Hembruff
+    
+    **This function was originally developed in and is completely adapted from Lab 10
+    
     A function which takes numerical inputs to generate an NxN
     tridiagnonal matrix with specified values
 
@@ -60,8 +66,11 @@ def make_initialcond(xi,k0,sigma0,x0):
     '''
     Author : Aidan Hembruff
     
-    A function which returns the initial wavepacket of a given form
-    based on scalable input parameters and grid
+    **This function was originally developed in Lab 10 and has been modified for the 
+    purposes of this project.
+    
+    A function which returns the normalized initial wavepacket of a given form
+    based on scalable input parameters and grid 
     
     Parameters
     ----------
@@ -70,48 +79,57 @@ def make_initialcond(xi,k0,sigma0,x0):
     k0 : Scalable parameter for the wavepacket
     
     sigma0 : Scalable parameter for the wavepacket
+    
+    x0 : The initial position of the wavepacket on the grid
 
     Returns
     -------
-    The wavepacket function determined by the parameters and spatial grid
+    The normalized wavepacket function determined by the parameters and spatial grid
 
     '''
-    return (np.exp((-((xi-x0)**2))/(2*(sigma0**2))))*(np.exp(1j*k0*xi))/np.sqrt(sigma0*np.sqrt(np.pi)) # wavepacket function equation 9.42
+            # wavepacket function given in equation 9.42 of NM4P
+    return (np.exp((-((xi-x0)**2))/(2*(sigma0**2))))*(np.exp(1j*k0*xi))/np.sqrt(sigma0*np.sqrt(np.pi)) 
 
 def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,0.5]):
     """
+    Author : Aidan Hembruff
     
+    A function to numerically solve the one dimensional, time-dependent Schrodinger equation
+    using one of two methods : FTCS Explicit or Crank-Nicholson
 
     Parameters
     ----------
-    nspace : TYPE
-        DESCRIPTION.
-    ntime : TYPE
-        DESCRIPTION.
-    tau : TYPE
-        DESCRIPTION.
-    method : TYPE, optional
-        DESCRIPTION. The default is "ftcs".
-    length : TYPE, optional
-        DESCRIPTION. The default is 200.
-    potential : TYPE, optional
-        DESCRIPTION. The default is [].
-    wparam : TYPE, optional
-        DESCRIPTION. The default is [10,0,0.5].
+    nspace : The number of spatial grid points to solve the Schrodinger equation on
+    
+    ntime : The number of time steps over which the chosen method will be iterated
+    
+    tau : The size of the time step
+    
+    method : The chosen method by which the solution will be obtained.
+    The default is "ftcs"
+    
+    length : The length of the x-grid. The default is 200
+        
+    potential : The indices on the spatial grid at which the potential
+    will be set to equal 1. The default is no positions, an empty array [] 
+        
+    wparam : The parameters for the initial wavepacket given in the form
+    [sigma,k0,x0]. The default is [10,0,0.5]
 
     Returns
     -------
-    psi : TYPE
-        DESCRIPTION.
-    x : TYPE
-        DESCRIPTION.
-    t : TYPE
-        DESCRIPTION.
-    probability : TYPE
-        DESCRIPTION.
+    psi : The two-dimensional array containing the complete spatial solution
+    for the Schrodinger equation at every time interval
+    
+    x : The spatial grid on which the solution to the Schrodinger equation was calculated
+    
+    t : The time grid over which the solution to the Schrodinger equation was calculated
+    
+    probability : The one-dimensional array storing the conserved probability at
+    each time step
 
     """
-    
+    # unpack parameters
     sigma0 , x0, k0 =  wparam[0], wparam[1], wparam[2] 
     h = length/(nspace-1)
     
@@ -153,7 +171,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         for istep in range(1, ntime):
             psi[:,istep] = ftcs_A.dot(psi[:,istep-1])
             
-            #probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
+            probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
             
         
         # Solution stability is determined by maximum valued eigenvalue of A
@@ -183,7 +201,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
             # integrate over the grid length?
-            #probability[istep] = psi[:,istep]*(np.conjugate(psi[:,istep]))
+            probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
     
     return psi, x, t, #probability
 
