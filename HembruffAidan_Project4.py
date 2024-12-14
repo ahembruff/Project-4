@@ -129,53 +129,61 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     each time step
 
     """
-    # unpack parameters
+    # unpack parameters for the initial wavepacket
     sigma0 , x0, k0 =  wparam[0], wparam[1], wparam[2] 
-    h = length/(nspace-1)
     
-    hbar = 1
-    mass = 0.5
-    ftcs_coeff = 1j*tau/hbar 
+    # defining parameters and coefficients
+    h = length/nspace               # Grid spacing for a solution with periodic boundary conditions
+    hbar = 1                        # The value of Planck's constant (divided by 2*pi) given in instructions
+    mass = 0.5                      # The value for mass given in instructions
     
-    crank_coeff = 1j*tau/(2*hbar)
+    # matrix coefficients given by NM4P Chapter 9 (give pahe numbers)
+    ftcs_coeff = 1j*tau/hbar        # Coefficient for the matrix used in the explicit ftcs scheme  
+    crank_coeff = 1j*tau/(2*hbar)   # Coefficient for the matrix used in the Crank-Nicholson scheme
+    H_coeff = -hbar**2/(2*mass*h)   # Coefficient for the discretized Hamiltonian operator
     
-    H_coeff = -hbar**2/(2*mass*h)
-    
+    # constructing the Hamiltonian matrix using the make_tridiagonal function
     H = H_coeff*make_tridiagonal(nspace,1,-2,1)
     
-    # Periodic BCs from Textbook
+    # Periodic Boundary Conditions given by NM4P
     H[0,-1] = H_coeff ; H[0,0] = -2*H_coeff ; H[0,1] = H_coeff
     H[-1,2] = H_coeff ; H[-1,-1] = -2*H_coeff ; H[-1,0] = H_coeff
     
-    if len(potential) != 0:
+    if len(potential) != 0: # if potential array is not empty, run the following
+        # add one to each diagonal element of the Hamiltonian matrix corresponding
+        # to the given index
         for i in potential:
             H[i,i] += 1  
     
-    x = np.linspace(-length/2,length/2,nspace)
+    # one-dimensional arrays to be returned by the function
+    x = np.linspace(-length/2,length/2,nspace) # the spatial grid
     t = tau*np.arange(0,ntime) # the time grid
     
+    
+    # initialize the array for storing the total probability at every time step
+    probability = np.zeros((ntime))
+    
+    # initialize the array for storing the complete spatial solution at every time step
+    psi = np.zeros((nspace,ntime),dtype=complex) 
+    
+    # initial condition using make_initialcond function and given parameters
+    psi[:,0] = make_initialcond(x,k0,sigma0,x0)
+    # run the Explicit FTCS scheme
     if method == "ftcs":
         
-        probability = np.zeros((ntime))
-        
-        # below from Lab 11
-        psi = np.zeros((nspace,ntime),dtype=complex) # initialize the array for storing the complete spatial solution
-        
-        # initial condition using make_initialcond function developed in Lab 10
-        psi[:,0] = make_initialcond(x,k0,sigma0,x0)
-        
+        # the matrix used for the explicit ftcs scheme
         ftcs_A = np.identity(nspace,dtype=complex) - ftcs_coeff*H
         
-        # following 7 lines adapted from Lab 11
-        # iterate over the number of time steps to obtain spatial solutions for every time step
+        # iterate over all time steps to obtain spatial solutions for every step
         for istep in range(1, ntime):
+            # present spatial solution is determined by dot product of previous spatial
+            # solution with the explicit FTCS scheme matrix
             psi[:,istep] = ftcs_A.dot(psi[:,istep-1])
             
+            # storing the total probability of the current time step
             probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
             
-        
-        # Solution stability is determined by maximum valued eigenvalue of A
-        # spectral_radius function is from Lab 10
+        # Solution stability for explicit FTCS is determined by spectral_radius function
         stability = spectral_radius(ftcs_A)
         
         # print statement for solution stability
@@ -183,27 +191,24 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             print("Solution is expected to be stable")
         else:
             print("Warning! Solution is expected to be unstable")
-            
+        
+    # run the Crank-Nicholson scheme
     if method == "crank":
+
+        # the matrix for the Crank-Nicholson scheme        
+        crank_A = np.dot(inv(np.identity(nspace,dtype=complex)+crank_coeff*H),
+                         (np.identity(nspace,dtype=complex)-crank_coeff*H))
         
-        probability = np.zeros((ntime))
-        
-        psi = np.zeros((nspace,ntime),dtype=complex)
-        
-        # initial condition using make_initialcond function developed in Lab 10
-        psi[:,0] = make_initialcond(x,k0,sigma0,x0)
-        
-        crank_A = np.dot(inv(np.identity(nspace,dtype=complex)+crank_coeff*H),(np.identity(nspace,dtype=complex)-crank_coeff*H))
-        
-        # following 7 lines adapted from Lab 11
-        # iterate over the number of time steps to obtain spatial solutions for every time step
+        # iterate over all time steps to obtain spatial solutions for every step
         for istep in range(1, ntime):
+            # present spatial solution is determined by dot product of previous spatial
+            # solution with the Crank-Nicholson scheme matrix
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
-            # integrate over the grid length?
+            # storing the total probability of the current time step
             probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
     
-    return psi, x, t, #probability
+    return psi, x, t, probability
 
 sol = sch_eqn(80,200,1,"crank")
 x =  sol[1]
@@ -211,24 +216,8 @@ psi = sol[0]
 index = 0
 
 
-def sch_plot(plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
-    """
+def sch_plot(x,t,psi,plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
     
-
-    Parameters
-    ----------
-    plot_type : TYPE, optional
-        DESCRIPTION. The default is "psi".
-    save : TYPE, optional
-        DESCRIPTION. The default is True.
-    filepath : TYPE, optional
-        DESCRIPTION. The default is "HembruffAidan_Project4_Fig1.png".
-
-    Returns
-    -------
-    None.
-
-    """
     
     fig = plt.figure()
         
@@ -253,4 +242,8 @@ def sch_plot(plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png
 
 sch_plot(plot_type="prob",save=False)
 
+sol = sch_eqn(80,200,1,"crank")
+x =  sol[1]
+psi = sol[0]
+index = 0
 # END
