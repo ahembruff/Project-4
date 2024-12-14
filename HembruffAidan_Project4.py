@@ -105,8 +105,8 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     
     tau : The size of the time step
     
-    method : The chosen method by which the solution will be obtained.
-    The default is "ftcs"
+    method : The chosen method by which the solution will be obtained. Either "ftcs"
+    or "crank". The default is "ftcs"
     
     length : The length of the x-grid. The default is 200
         
@@ -133,7 +133,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     sigma0 , x0, k0 =  wparam[0], wparam[1], wparam[2] 
     
     # defining parameters and coefficients
-    h = length/nspace               # Grid spacing for a solution with periodic boundary conditions
+    h = length/(nspace-1)             # Grid spacing for a solution with periodic boundary conditions
     hbar = 1                        # The value of Planck's constant (divided by 2*pi) given in instructions
     mass = 0.5                      # The value for mass given in instructions
     
@@ -168,6 +168,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     
     # initial condition using make_initialcond function and given parameters
     psi[:,0] = make_initialcond(x,k0,sigma0,x0)
+    
     # run the Explicit FTCS scheme
     if method == "ftcs":
         
@@ -181,7 +182,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             psi[:,istep] = ftcs_A.dot(psi[:,istep-1])
             
             # storing the total probability of the current time step
-            probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
+            # probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
             
         # Solution stability for explicit FTCS is determined by spectral_radius function
         stability = spectral_radius(ftcs_A)
@@ -206,9 +207,9 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
             # storing the total probability of the current time step
-            probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
+            # probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
     
-    return psi, x, t, probability
+    return psi, x, t, # probability
 
 sol = sch_eqn(80,200,1,"crank")
 x =  sol[1]
@@ -216,34 +217,66 @@ psi = sol[0]
 index = 0
 
 
-def sch_plot(x,t,psi,plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
+def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
+    """
+    Author : Aidan Hembruff
     
+    A function which plots the output of the sch_eqn function at a given time, either the
+    real part of the spatial solution or the probability density as a function of x
+
+    Parameters
+    ----------
+    x : The one-dimensional spatial grid on which the solution was calculated
+    
+    psi : The two-dimensional array containing the complete spatial solution of the 
+    Schrodinger equation at every time step
+    
+    time : The one-dimensional time grid for which the solution was calculated
+    
+    plot_type : The type of plot to create, either "psi" - the real part of the wavefunction -
+    or "prob" - the probability density. The default is "psi"
+    
+    save : Condition for saving the plot to a png file. The default is True
+    
+    filepath : The filepath to save the figure of the plot to.
+    The default is "HembruffAidan_Project4_Fig1.png"
+        
+    Output
+    ----------
+    The desired plot and a saved figure (only if save condition is True)
+
+    """
     
     fig = plt.figure()
-        
+    
+    # plot the real part of the wavefunction
     if plot_type == "psi":
-        # adapted from textbook
-        plt.plot(x, np.real(psi[:,index]))
+        # adapted from NM4P "schro" program
+        plt.plot(x, np.real(psi[:,time]))
         plt.xlabel("x") ; plt.ylabel(r"$\psi(x)$")
         plt.title("Real Wavefunction")
+        plt.grid(True)
         plt.show()
     
+    # plot the probability density
     if plot_type == "prob":
-        density = psi[:,index]*np.conjugate(psi[:,index])
+        density = psi[:,index]*np.conjugate(psi[:,time])
         plt.plot(x, density)
         plt.xlabel("x") ; plt.ylabel("P(x,t)")
         plt.title("Probability Density")
+        plt.grid(True)
         plt.show()
-        
+    
+    # save the figure if desired
     if save == True:
         plt.savefig(filepath)
-    
     return
 
-sch_plot(plot_type="prob",save=False)
-
+# example
 sol = sch_eqn(80,200,1,"crank")
-x =  sol[1]
-psi = sol[0]
-index = 0
+x_example =  sol[1]
+psi_example = sol[0]
+time_ex = 25
+
+sch_plot(x_example,psi_example,time_ex,plot_type="prob",save=True)
 # END
