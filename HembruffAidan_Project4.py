@@ -140,15 +140,19 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     # matrix coefficients given by NM4P Chapter 9 (give pahe numbers)
     ftcs_coeff = 1j*tau/hbar        # Coefficient for the matrix used in the explicit ftcs scheme  
     crank_coeff = 1j*tau/(2*hbar)   # Coefficient for the matrix used in the Crank-Nicholson scheme
-    H_coeff = -hbar**2/(2*mass*h)   # Coefficient for the discretized Hamiltonian operator
+    H_coeff = -(hbar**2)/(2*mass*(h**2))   # Coefficient for the discretized Hamiltonian operator
     
     # constructing the Hamiltonian matrix using the make_tridiagonal function
-    H = H_coeff*make_tridiagonal(nspace,1,-2,1)
+    H = H_coeff*(np.identity(nspace)+make_tridiagonal(nspace,1,-2,1))
     
+    H[0,-1] = H_coeff
+    H[-1,0] = H_coeff
+    """
     # Periodic Boundary Conditions given by NM4P
     H[0,-1] = H_coeff ; H[0,0] = -2*H_coeff ; H[0,1] = H_coeff
     H[-1,2] = H_coeff ; H[-1,-1] = -2*H_coeff ; H[-1,0] = H_coeff
-    
+    """
+        
     if len(potential) != 0: # if potential array is not empty, run the following
         # add one to each diagonal element of the Hamiltonian matrix corresponding
         # to the given index
@@ -176,13 +180,14 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         ftcs_A = np.identity(nspace,dtype=complex) - ftcs_coeff*H
         
         # iterate over all time steps to obtain spatial solutions for every step
-        for istep in range(1, ntime):
+        for istep in range(0, ntime):
             # present spatial solution is determined by dot product of previous spatial
             # solution with the explicit FTCS scheme matrix
-            psi[:,istep] = ftcs_A.dot(psi[:,istep-1])
+            # equation 9.32??
+            psi[:,istep+1] = ftcs_A.dot(psi[:,istep])
             
-            # storing the total probability of the current time step
-            # probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
+            # computing the probability array
+            probability[istep] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
             
         # Solution stability for explicit FTCS is determined by spectral_radius function
         stability = spectral_radius(ftcs_A)
@@ -206,15 +211,10 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             # solution with the Crank-Nicholson scheme matrix
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
-            # storing the total probability of the current time step
-            # probability[istep] = length*np.sum(psi[:,istep]*(np.conjugate(psi[:,istep])))
+            # computing the probability array
+            probability[istep] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
     
-    return psi, x, t, # probability
-
-sol = sch_eqn(80,200,1,"crank")
-x =  sol[1]
-psi = sol[0]
-index = 0
+    return psi, x, t, probability
 
 
 def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
@@ -247,8 +247,6 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
 
     """
     
-    fig = plt.figure()
-    
     # plot the real part of the wavefunction
     if plot_type == "psi":
         # adapted from NM4P "schro" program
@@ -260,7 +258,7 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
     
     # plot the probability density
     if plot_type == "prob":
-        density = psi[:,index]*np.conjugate(psi[:,time])
+        density = psi[:,time]*np.conjugate(psi[:,time])
         plt.plot(x, density)
         plt.xlabel("x") ; plt.ylabel("P(x,t)")
         plt.title("Probability Density")
@@ -270,13 +268,15 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
     # save the figure if desired
     if save == True:
         plt.savefig(filepath)
+        
     return
 
+
 # example
-sol = sch_eqn(80,200,1,"crank")
+sol = sch_eqn(200,400,1,"crank")
 x_example =  sol[1]
 psi_example = sol[0]
-time_ex = 25
+time_ex = 150
 
 sch_plot(x_example,psi_example,time_ex,plot_type="prob",save=True)
 # END
