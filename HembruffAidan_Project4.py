@@ -147,11 +147,6 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     
     H[0,-1] = H_coeff
     H[-1,0] = H_coeff
-    """
-    # Periodic Boundary Conditions given by NM4P
-    H[0,-1] = H_coeff ; H[0,0] = -2*H_coeff ; H[0,1] = H_coeff
-    H[-1,2] = H_coeff ; H[-1,-1] = -2*H_coeff ; H[-1,0] = H_coeff
-    """
         
     if len(potential) != 0: # if potential array is not empty, run the following
         # add one to each diagonal element of the Hamiltonian matrix corresponding
@@ -162,7 +157,6 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     # one-dimensional arrays to be returned by the function
     x = np.linspace(-length/2,length/2,nspace) # the spatial grid
     t = tau*np.arange(0,ntime) # the time grid
-    
     
     # initialize the array for storing the total probability at every time step
     probability = np.zeros((ntime))
@@ -180,11 +174,11 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         ftcs_A = np.identity(nspace,dtype=complex) - ftcs_coeff*H
         
         # iterate over all time steps to obtain spatial solutions for every step
-        for istep in range(0, ntime):
+        for istep in range(1, ntime):
             # present spatial solution is determined by dot product of previous spatial
             # solution with the explicit FTCS scheme matrix
             # equation 9.32??
-            psi[:,istep+1] = ftcs_A.dot(psi[:,istep])
+            psi[:,istep-1] = ftcs_A.dot(psi[:,istep-1])
             
             # computing the probability array
             probability[istep] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
@@ -202,8 +196,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     if method == "crank":
 
         # the matrix for the Crank-Nicholson scheme        
-        crank_A = np.dot(inv(np.identity(nspace,dtype=complex)+crank_coeff*H),
-                         (np.identity(nspace,dtype=complex)-crank_coeff*H))
+        crank_A = np.dot(inv(np.identity(nspace,dtype=complex)+crank_coeff*H),(np.identity(nspace,dtype=complex)-crank_coeff*H))
         
         # iterate over all time steps to obtain spatial solutions for every step
         for istep in range(1, ntime):
@@ -212,7 +205,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
             # computing the probability array
-            probability[istep] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
+            probability[istep-1] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
     
     return psi, x, t, probability
 
@@ -273,10 +266,10 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
 
 
 # example
-sol = sch_eqn(200,400,1,"crank")
+sol = sch_eqn(200,400,0.5,"crank",length=200,potential=[25,50],wparam=[12,5,0.7])
 x_example =  sol[1]
 psi_example = sol[0]
-time_ex = 150
+time_ex = 170
 
-sch_plot(x_example,psi_example,time_ex,plot_type="prob",save=True)
+sch_plot(x_example,psi_example,time_ex,plot_type="psi",save=True)
 # END
