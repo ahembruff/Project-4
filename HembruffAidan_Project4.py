@@ -133,14 +133,14 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     sigma0 , x0, k0 =  wparam[0], wparam[1], wparam[2] 
     
     # defining parameters and coefficients
-    h = length/(nspace-1)            # Grid spacing for a solution with periodic boundary conditions
+    h = length/(nspace-1)           # Grid spacing for a solution with periodic boundary conditions
     hbar = 1                        # The value of Planck's constant (divided by 2*pi) given in instructions
     mass = 0.5                      # The value for mass given in instructions
     
-    # matrix coefficients given by NM4P Chapter 9 (give pahe numbers)
-    ftcs_coeff = 1j*tau/hbar        # Coefficient for the matrix used in the explicit ftcs scheme  
-    crank_coeff = 1j*tau/(2*hbar)   # Coefficient for the matrix used in the Crank-Nicholson scheme
-    H_coeff = -(hbar**2)/(2*mass*(h**2))   # Coefficient for the discretized Hamiltonian operator
+    # matrix coefficients given by NM4P Chapter 9 
+    ftcs_coeff = 1j*tau/hbar        # Coefficient for the matrix used in the explicit ftcs scheme  (eq 9.32)
+    crank_coeff = 1j*tau/(2*hbar)   # Coefficient for the matrix used in the Crank-Nicholson scheme (eq 9.40)
+    H_coeff = -(hbar**2)/(2*mass*(h**2))   # Coefficient for the discretized Hamiltonian operator (schro program pp240)
     
     # constructing the Hamiltonian matrix using the make_tridiagonal function
     H = H_coeff*(np.identity(nspace)+make_tridiagonal(nspace,1,-2,1))
@@ -170,6 +170,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     # initial condition using make_initialcond function and given parameters
     psi[:,0] = make_initialcond(x,k0,sigma0,x0)
     
+    # set the total probability of the initial condition
     probability[0] = np.sum(np.abs(psi[:,0]*np.conjugate(psi[:,0])))
     
     # run the Explicit FTCS scheme
@@ -185,7 +186,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             # equation 9.32 from NM4P
             psi[:,istep+1] = ftcs_A.dot(psi[:,istep])
             
-            # computing the probability array
+            # computing the current element probability array
             probability[istep+1] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
             
         # Solution stability for explicit FTCS is determined by spectral_radius function
@@ -229,7 +230,7 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
     psi : The two-dimensional array containing the complete spatial solution of the 
     Schrodinger equation at every time step
     
-    time : The one-dimensional time grid for which the solution was calculated
+    time : The time index in the psi array for which the plot will show the spatial solution
     
     plot_type : The type of plot to create, either "psi" - the real part of the wavefunction -
     or "prob" - the probability density. The default is "psi"
@@ -256,7 +257,7 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
     
     # plot the probability density
     if plot_type == "prob":
-        density = psi[:,time]*np.conjugate(psi[:,time])
+        density = np.abs(psi[:,time]*np.conjugate(psi[:,time]))
         plt.plot(x, density)
         plt.xlabel("x") ; plt.ylabel("P(x,t)")
         plt.title("Probability Density")
@@ -271,13 +272,11 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
 
 
 # example
-sol = sch_eqn(200,400,0.1,"ftcs",length=200,potential=[25,50],wparam=[12,5,0.7])
+sol = sch_eqn(200,400,0.1,"crank",length=200,potential=[25,50],wparam=[12,5,0.7])
 x_example =  sol[1]
 psi_example = sol[0]
 time_ex = 170
 
-sch_plot(x_example,psi_example,time_ex,plot_type="psi",save=True)
+sch_plot(x_example,psi_example,time_ex,plot_type="prob",save=True)
 # END
 
-tri = make_tridiagonal(5,1,3,2)
-print(tri)
