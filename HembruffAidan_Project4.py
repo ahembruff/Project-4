@@ -182,7 +182,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         for istep in range(0, ntime-1):
             # present spatial solution is determined by dot product of previous spatial
             # solution with the explicit FTCS scheme matrix
-            # equation 9.32??
+            # equation 9.32 from NM4P
             psi[:,istep+1] = ftcs_A.dot(psi[:,istep])
             
             # computing the probability array
@@ -278,3 +278,6 @@ time_ex = 170
 
 sch_plot(x_example,psi_example,time_ex,plot_type="psi",save=True)
 # END
+
+tri = make_tridiagonal(5,1,3,2)
+print(tri)
