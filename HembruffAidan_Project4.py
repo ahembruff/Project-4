@@ -271,12 +271,3 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
     return
 
 
-# example
-sol = sch_eqn(200,400,0.1,"crank",length=200,potential=[25,50],wparam=[12,5,0.7])
-x_example =  sol[1]
-psi_example = sol[0]
-time_ex = 170
-
-sch_plot(x_example,psi_example,time_ex,plot_type="prob",save=True)
-# END
-
