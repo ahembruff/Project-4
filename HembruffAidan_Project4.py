@@ -207,7 +207,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         # iterate over all time steps to obtain spatial solutions for every step
         for istep in range(1, ntime):
             # present spatial solution is determined by dot product of previous spatial
-            # solution with the Crank-Nicholson scheme matrix
+            # solution with the Crank-Nicholson scheme matrix given in NM4P
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
             # computing the probability array
@@ -216,7 +216,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     return psi, x, t, probability
 
 
-def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Project4_Fig1.png"):
+def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Project4_ExamplePlot.png"):
     """
     Author : Aidan Hembruff
     
@@ -269,5 +269,6 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
         plt.savefig(filepath)
         
     return
+
 
 
