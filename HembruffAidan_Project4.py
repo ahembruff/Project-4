@@ -76,9 +76,9 @@ def make_initialcond(xi,k0,sigma0,x0):
     ----------
     xi : The spatial grid which the wavepacket will be a function of
     
-    k0 : Scalable parameter for the wavepacket
+    k0 : Scalable parameter for the wavepacket (wavenumber)
     
-    sigma0 : Scalable parameter for the wavepacket
+    sigma0 : Scalable parameter for the wavepacket (standard deviation)
     
     x0 : The initial position of the wavepacket on the grid
 
@@ -133,7 +133,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     sigma0 , x0, k0 =  wparam[0], wparam[1], wparam[2] 
     
     # defining parameters and coefficients
-    h = length/(nspace-1)             # Grid spacing for a solution with periodic boundary conditions
+    h = length/(nspace-1)            # Grid spacing for a solution with periodic boundary conditions
     hbar = 1                        # The value of Planck's constant (divided by 2*pi) given in instructions
     mass = 0.5                      # The value for mass given in instructions
     
@@ -145,8 +145,11 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     # constructing the Hamiltonian matrix using the make_tridiagonal function
     H = H_coeff*(np.identity(nspace)+make_tridiagonal(nspace,1,-2,1))
     
+    # periodic boundary conditions given in the Schro program from NM4P
     H[0,-1] = H_coeff
     H[-1,0] = H_coeff
+    H[0,1] = H_coeff
+    H[-1,-2] = H_coeff
         
     if len(potential) != 0: # if potential array is not empty, run the following
         # add one to each diagonal element of the Hamiltonian matrix corresponding
@@ -167,6 +170,8 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
     # initial condition using make_initialcond function and given parameters
     psi[:,0] = make_initialcond(x,k0,sigma0,x0)
     
+    probability[0] = np.sum(np.abs(psi[:,0]*np.conjugate(psi[:,0])))
+    
     # run the Explicit FTCS scheme
     if method == "ftcs":
         
@@ -174,14 +179,14 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         ftcs_A = np.identity(nspace,dtype=complex) - ftcs_coeff*H
         
         # iterate over all time steps to obtain spatial solutions for every step
-        for istep in range(1, ntime):
+        for istep in range(0, ntime-1):
             # present spatial solution is determined by dot product of previous spatial
             # solution with the explicit FTCS scheme matrix
             # equation 9.32??
-            psi[:,istep-1] = ftcs_A.dot(psi[:,istep-1])
+            psi[:,istep+1] = ftcs_A.dot(psi[:,istep])
             
             # computing the probability array
-            probability[istep] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
+            probability[istep+1] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
             
         # Solution stability for explicit FTCS is determined by spectral_radius function
         stability = spectral_radius(ftcs_A)
@@ -205,7 +210,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
             # computing the probability array
-            probability[istep-1] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
+            probability[istep] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
     
     return psi, x, t, probability
 
@@ -266,7 +271,7 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
 
 
 # example
-sol = sch_eqn(200,400,0.5,"crank",length=200,potential=[25,50],wparam=[12,5,0.7])
+sol = sch_eqn(200,400,0.1,"ftcs",length=200,potential=[25,50],wparam=[12,5,0.7])
 x_example =  sol[1]
 psi_example = sol[0]
 time_ex = 170
