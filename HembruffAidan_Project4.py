@@ -12,6 +12,7 @@ from numpy.linalg import eig
 from numpy.linalg import inv
 import cmath
 import matplotlib.pyplot as plt
+import sys
 
 def spectral_radius(A):
     '''
@@ -179,6 +180,12 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         # the matrix used for the explicit ftcs scheme
         ftcs_A = np.identity(nspace,dtype=complex) - ftcs_coeff*H
         
+        # Solution stability for explicit FTCS is determined by spectral_radius function
+        stability = spectral_radius(ftcs_A)
+        
+        if stability >= 1:
+            sys.exit("Warning! Solution is expected to be unstable")
+        
         # iterate over all time steps to obtain spatial solutions for every step
         for istep in range(0, ntime-1):
             # present spatial solution is determined by dot product of previous spatial
@@ -189,14 +196,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
             # computing the current element probability array
             probability[istep+1] = np.sum(np.abs(psi[:,istep]*np.conjugate(psi[:,istep])))
             
-        # Solution stability for explicit FTCS is determined by spectral_radius function
-        stability = spectral_radius(ftcs_A)
-        
-        # print statement for solution stability
-        if stability <= 1:
-            print("Solution is expected to be stable")
-        else:
-            print("Warning! Solution is expected to be unstable")
+
         
     # run the Crank-Nicholson scheme
     if method == "crank":
@@ -207,7 +207,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         # iterate over all time steps to obtain spatial solutions for every step
         for istep in range(1, ntime):
             # present spatial solution is determined by dot product of previous spatial
-            # solution with the Crank-Nicholson scheme matrix given in NM4P
+            # solution with the Crank-Nicholson scheme matrix given in NM4P equation 9.42
             psi[:,istep] = np.dot(crank_A,psi[:,istep-1])
             
             # computing the probability array
@@ -269,6 +269,4 @@ def sch_plot(x,psi,time,plot_type="psi",save=True,filepath="HembruffAidan_Projec
         plt.savefig(filepath)
         
     return
-
-# END
 
