@@ -183,7 +183,7 @@ def sch_eqn(nspace,ntime,tau,method="ftcs",length=200,potential=[],wparam=[10,0,
         # Solution stability for explicit FTCS is determined by spectral_radius function
         stability = spectral_radius(ftcs_A)
         
-        if stability >= 1:
+        if stability > 1:
             sys.exit("Warning! Solution is expected to be unstable")
         
         # iterate over all time steps to obtain spatial solutions for every step
